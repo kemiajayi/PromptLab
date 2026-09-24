@@ -105,7 +105,7 @@ class TestPrompts:
         
         # NOTE: This assertion will fail due to Bug #2!
         # The updated_at should be different from original
-        # assert data["updated_at"] != original_updated_at  # Uncomment after fix
+        assert data["updated_at"] != original_updated_at  # Uncomment after fix
     
     def test_sorting_order(self, client: TestClient):
         """Test that prompts are sorted newest first.
@@ -152,28 +152,44 @@ class TestCollections:
         assert response.status_code == 404
     
     def test_delete_collection_with_prompts(self, client: TestClient, sample_collection_data, sample_prompt_data):
-        """Test deleting a collection that has prompts.
+        """ This test verifies that if a collection has associated prompts,
+        the collection cannot be deleted. It checks that the appropriate
+        error response is returned, and that both the collection and
+        associated prompt still exist after the deletion attempt.
+
+        Args:
+           client (TestClient): The TestClient instance for making API requests.
+           sample_collection_data (dict): Sample data for creating a collection.
+           sample_prompt_data (dict): Sample data for creating a prompt referencing the collection.
+
+        Raises:
+           HTTPException: If the API returns an error that is checked in the assertions."""
         
-        NOTE: Bug #4 - prompts become orphaned after collection deletion.
-        This test documents the current (buggy) behavior.
-        After fixing, update the test to verify correct behavior.
-        """
-        # Create collection
+        # Step 1: Create a collection
         col_response = client.post("/collections", json=sample_collection_data)
         collection_id = col_response.json()["id"]
         
-        # Create prompt in collection
+        # Step 2: Create a prompt associated with the collection
         prompt_data = {**sample_prompt_data, "collection_id": collection_id}
         prompt_response = client.post("/prompts", json=prompt_data)
-        prompt_id = prompt_response.json()["id"]
+        prompt_id = prompt_response.json()["id"]  # Save the prompt ID
         
-        # Delete collection
-        client.delete(f"/collections/{collection_id}")
+        # Step 3: Attempt to delete the collection
+        response = client.delete(f"/collections/{collection_id}")
         
-        # The prompt still exists but has invalid collection_id
-        # This is Bug #4 - should be handled properly
-        prompts = client.get("/prompts").json()["prompts"]
-        if prompts:
-            # Prompt exists with orphaned collection_id
-            assert prompts[0]["collection_id"] == collection_id
-            # After fix, collection_id should be None or prompt should be deleted
+        # Step 4: Verify that the response is 400 Bad Request
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Cannot delete collection with associated prompts"
+
+        # Step 5: Verify the collection still exists
+        collection_check_response = client.get(f"/collections/{collection_id}")
+        assert collection_check_response.status_code == 200  # Collection should still exist
+
+        # Step 6: Retrieve the specific prompt by its prompt ID
+        prompt_check_response = client.get(f"/prompts/{prompt_id}")
+        assert prompt_check_response.status_code == 200  # The prompt should still exist
+        prompt_data = prompt_check_response.json()
+
+        # Step 7: Verify the prompt's collection_id still matches the collection
+        assert prompt_data["collection_id"] == collection_id  # It should reference the valid collection
+

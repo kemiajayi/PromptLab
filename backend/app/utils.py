@@ -7,11 +7,14 @@ from app.models import Prompt
 def sort_prompts_by_date(prompts: List[Prompt], descending: bool = True) -> List[Prompt]:
     """Sort prompts by creation date.
     
-    Note: There might be a bug here. Check the sort order!
+    Args:
+        prompts (List[Prompt]): A list of prompts to be sorted.
+        descending (bool): If True, sort in descending order (newest first). If False, sort in ascending order (oldest first).
+
+    Returns:
+        The list of prompts sorted by creation date.
     """
-    # BUG #3: This sorts ascending (oldest first) when it should sort descending (newest first)
-    # The 'descending' parameter is ignored!
-    return sorted(prompts, key=lambda p: p.created_at)
+    return sorted(prompts, key=lambda p: p.created_at, reverse=descending)
 
 
 def filter_prompts_by_collection(prompts: List[Prompt], collection_id: str) -> List[Prompt]:
@@ -48,3 +51,4 @@ def extract_variables(content: str) -> List[str]:
     import re
     pattern = r'\{\{(\w+)\}\}'
     return re.findall(pattern, content)
+
