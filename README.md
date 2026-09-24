@@ -38,7 +38,7 @@ The application currently uses in-memory storage. Later modules will extend the 
 
 ```bash
 # Clone the repo
-git clone https://github.com/kemiajayi/PromptLab
+git clone https://github.com/kemiajayi/PromptLab.git
 cd PromptLab
 
 #Create a virtual environment
