@@ -18,18 +18,11 @@ PromptLab is an internal tool for AI engineers to **store, organize, and manage 
 - 📜 Track version history
 - 🧪 Test prompts with sample inputs
 
-### The Current Situation
+### Current Project State
 
-The previous developer left us with a *partially working* backend. The core structure is there, but:
+Week 1 backend rescue is complete. The known backend bugs have been fixed, the missing PATCH endpoint has been implemented, and the provided test suite passes.
 
-- There are **several bugs** that need fixing
-- Some **features are incomplete**
-- The **documentation is minimal** (you'll fix that)
-- There are **no tests** worth mentioning
-- **No CI/CD pipeline** exists
-- **No frontend** has been built yet
-
-Your job over the next 4 weeks is to transform this into a **production-ready, full-stack application**.
+The application currently uses in-memory storage. Later modules will extend the project with documentation, testing, CI/CD, and frontend work to transform this into a **production-ready, full-stack application**.
 
 ---
 
@@ -37,7 +30,7 @@ Your job over the next 4 weeks is to transform this into a **production-ready, f
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.12 recommended for the current pinned backend dependencies
 - Node.js 18+ (for Week 4)
 - Git
 
@@ -45,12 +38,20 @@ Your job over the next 4 weeks is to transform this into a **production-ready, f
 
 ```bash
 # Clone the repo
-git clone <your-repo-url>
-cd promptlab
+git clone https://github.com/kemiajayi/PromptLab
+cd PromptLab
 
-# Set up backend
+#Create a virtual environment
+py -3.12 -m venv .venv
+
+# Activate it in Git Bash
+source .venv/Scripts/activate
+
+# Set up the backend
 cd backend
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+
+# Start the API
 python main.py
 ```
 
@@ -62,7 +63,7 @@ API docs at: http://localhost:8000/docs
 
 ```bash
 cd backend
-pytest tests/ -v
+python -m pytest tests/ -v
 ```
 
 ---
@@ -78,20 +79,20 @@ promptlab/
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py
-│   │   ├── api.py              # FastAPI routes (has bugs!)
+│   │   ├── api.py              # FastAPI routes
 │   │   ├── models.py           # Pydantic models
 │   │   ├── storage.py          # In-memory storage
 │   │   └── utils.py            # Helper functions
 │   ├── tests/
 │   │   ├── __init__.py
-│   │   ├── test_api.py         # Basic tests
+│   │   ├── test_api.py         # API tests
 │   │   └── conftest.py         # Test fixtures
 │   ├── main.py                 # Entry point
 │   └── requirements.txt
 │
 ├── frontend/                    # You'll create this in Week 4
 ├── specs/                       # You'll create this in Week 2
-├── docs/                        # You'll create this in Week 2
+├── docs/                        # System model, prompt log, and AI verification evidence
 └── .github/                     # You'll set up CI/CD in Week 3
 ```
 
@@ -134,15 +135,16 @@ The goal is to learn how to build *better* software *faster* with AI. Don't be a
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
 | GET | `/health` | Health check | ✅ Works |
-| GET | `/prompts` | List all prompts | ⚠️ Has issues |
-| GET | `/prompts/{id}` | Get single prompt | ❌ Bug |
+| GET | `/prompts` | List all prompts | ✅ Works |
+| GET | `/prompts/{id}` | Get single prompt by ID | ✅ Works |
 | POST | `/prompts` | Create prompt | ✅ Works |
-| PUT | `/prompts/{id}` | Update prompt | ⚠️ Has issues |
-| DELETE | `/prompts/{id}` | Delete prompt | ✅ Works |
+| PUT | `/prompts/{id}` | Replace a prompts fields | ✅ Works  |
+| PATCH | `/prompts/{id}` | Partially update a prompt | ✅ Works |
+| DELETE | `/prompts/{id}` | Delete a prompt | ✅ Works |
 | GET | `/collections` | List collections | ✅ Works |
-| GET | `/collections/{id}` | Get collection | ✅ Works |
+| GET | `/collections/{id}` | Get a collection by ID | ✅ Works |
 | POST | `/collections` | Create collection | ✅ Works |
-| DELETE | `/collections/{id}` | Delete collection | ❌ Bug |
+| DELETE | `/collections/{id}` | Delete a collection if no prompts reference it |  ✅ Works |
 
 ---
 
