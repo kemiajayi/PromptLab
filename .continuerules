@@ -1,0 +1,61 @@
+# PromptLab project rules
+
+- PromptLab is a FastAPI + Pydantic v2 backend with in-memory storage. Source lives in backend/app/, tests in backend/tests/, docs in docs/, feature specs in specs/.
+
+## Project Structure
+- backend/app/models.py: Pydantic models plus generate_id() and get_current_time().
+- backend/app/api.py: routes, HTTPException handling, and collection-reference checks.
+- backend/app/storage.py: the Storage class and the single shared `storage` instance.
+- backend/app/utils.py: pure helper functions that take and return Prompt lists or strings.
+- backend/app/__init__.py: holds `__version__`. This is the only source of the app version.
+
+## Patterns and Conventions
+- Every route declares `response_model`. Create routes declare `status_code=201` and delete routes declare `status_code=204`.
+- Create ids with `generate_id()` and timestamps with `get_current_time()`. Timestamps are naive UTC datetimes.
+- Group code under banner comments in the form `# ============== Section Name ==============`.
+- PUT replaces every editable field. Omitted `description` and `collection_id` become null.
+- PATCH applies only supplied fields, using `model_dump(exclude_unset=True)`.
+- PUT and PATCH preserve `id` and `created_at` and refresh `updated_at`.
+- A collection cannot be deleted while any prompt references it.
+- Storage methods never raise for missing records. They return `None` or `False`, and api.py turns that into an HTTPException.
+
+## Coding Standards
+- Add type hints to parameters and return types in all new code. Existing route functions rely on `response_model` and `status_code` instead of return annotations, so leave those as they are.
+- Do not add dependencies beyond backend/requirements.txt without asking.
+- Comments explain why, not what.
+
+## File Naming
+- Python modules and test files use snake_case. Test files are `test_*.py`, and `conftest.py` is the only exception.
+- Reference documents in docs/ use UPPER_SNAKE_CASE.md (API_REFERENCE.md, SYSTEM_MODEL.md).
+- Notes, logs, and specs use kebab-case.md (agent-effect-note.md, prompt-log.md, specs/tagging-system.md).
+- Classes use PascalCase. Functions and variables use snake_case.
+
+## Error Handling
+- Raise HTTPException with a `detail` string. The response body is always `{"detail": "..."}`.
+- Use these exact status codes and messages:
+  - 404 "Prompt not found": a prompt id in the URL does not exist.
+  - 404 "Collection not found": a collection id in the URL does not exist.
+  - 400 "Collection not found": a `collection_id` in a request body references a missing collection.
+  - 400 "Cannot delete collection with associated prompts": the collection still has prompts.
+- Never raise 422 by hand. FastAPI returns 422 automatically when Pydantic validation fails.
+- Do not catch exceptions silently. Do not change existing messages or status codes unless a spec says to.
+
+## Testing Requirements
+- Run tests from the backend directory with `python -m pytest tests/ -v`.
+- Use the fixtures in backend/tests/conftest.py: `client`, `sample_prompt_data`, `sample_collection_data`, and the autouse `clear_storage`.
+- Every new endpoint needs one test for success and one test for each error branch above.
+- Assert both the status code and the `detail` text for error responses.
+- Test through the API with TestClient. Do not call storage directly except in storage tests.
+
+## Documentation
+- Use Google-style docstrings with Args, Returns, and Raises. Docstring examples must show the real values the code returns.
+- When behavior changes, update the docstring, docs/API_REFERENCE.md, and the README in the same change.
+
+## API Reference Conventions (docs/API_REFERENCE.md)
+- The health version is `__version__` from backend/app/__init__.py. Never write any other version. The status string is lowercase "healthy".
+- Label every status code with its reason phrase, for example `200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `404 Not Found`, `422 Unprocessable Entity`.
+- Every JSON example must be valid JSON. Never use `...` or `[...]` as a placeholder. Use a real example or an empty array with `"total": 0`.
+- Every endpoint that accepts a request body documents the 422 response.
+- Curl commands use `-i`, a quoted URL, and the placeholders `PROMPT_ID` and `COLLECTION_ID`. Get real ids from the POST response.
+- Document PUT and PATCH semantics exactly as described under Patterns and Conventions.
+- Authentication: none is implemented. Say so.
